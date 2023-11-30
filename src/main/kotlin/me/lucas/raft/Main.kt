@@ -6,6 +6,7 @@ import kotlinx.coroutines.*
 import java.net.StandardSocketOptions
 import java.nio.channels.AsynchronousChannelGroup
 import java.util.concurrent.Executors
+import kotlin.time.Duration
 
 private val executor = Executors.newCachedThreadPool()
 
@@ -25,5 +26,6 @@ fun main(): Unit = runBlocking(executor.asCoroutineDispatcher()) {
     launch { provider.Node(host = a, b, c) }
     launch { provider.Node(host = b, a, c) }
     val node = provider.Node(host = c, b, a)
-    node.append(byteArrayOf(0, 1))
+    node.append("test".encodeToByteArray())
+    delay(Duration.INFINITE)
 }

@@ -4,6 +4,7 @@ import com.github.exerosis.mynt.base.Address
 import com.github.exerosis.mynt.base.Connection
 import com.github.exerosis.mynt.base.Provider
 import com.github.exerosis.mynt.base.Write
+import com.github.exerosis.mynt.bytes
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
@@ -19,12 +20,13 @@ const val OP_VOTE: Byte = 0
 const val OP_APPEND: Byte = 1
 
 interface Node {
-    suspend fun append(bytes: ByteArray)
+    suspend fun append(message: ByteArray)
     suspend fun close()
 }
 
 data class NodeData(
     val id: UUID,
+    var leader: UUID? = null,
     var currentState: Int = FOLLOWER,
     var currentTerm: Int = 0,
     val majority: Int = 0,
@@ -70,10 +72,8 @@ suspend fun Provider.Node(
     NodeData(id = id, majority = (nodes.size + 1) / 2 + 1).run {
         VoteData().run {
             val context = currentCoroutineContext()
-            val leaderId = AtomicReference<UUID>(null)
             CoroutineScope(context).launch {
                 while (isActive) accept(host).apply {
-                    val writer: Channel<suspend Write.() -> (Unit)> = Channel(capacity = Int.MAX_VALUE)
                     launch {
                         try {
                             write.long(id.mostSignificantBits)
@@ -81,36 +81,26 @@ suspend fun Provider.Node(
                             val nodeId = UUID(read.long(), read.long())
 
                             launch {
-                                try { writer.consumeEach { write.it() } }
-                                catch (exception: Exception) { writer.close(); close() }
-                            }
-
-                            launch {
                                 try {
                                     while (isActive) {
                                         val op = read.byte()
                                         when (op) {
-                                            OP_VOTE -> voteReceived(writer, nodeId, read.int(), read.int(), read.int())
+                                            OP_VOTE -> voteReceived(nodeId, read.int(), read.int(), read.int())
                                             OP_APPEND -> {
-                                                println("Recieved log to append: $nodeId")
+                                                // handle follower and leader log replication
+                                                ping.set(0L)
+                                                if (currentState != LEADER) leader = nodeId
                                             }
                                         }
                                     }
                                 } catch (exception: Exception) {
                                     if (exception !is ClosedChannelException) exception.printStackTrace()
-                                    writer.close(); close()
+                                    close()
                                 }
-                            }
-
-                            while (isActive) {
-                                if (currentState == LEADER) {
-                                    writer.send { write.byte(OP_APPEND) }
-                                }
-                                delay(50)
                             }
                         } catch (exception: Exception) {
                             if (exception !is ClosedChannelException) exception.printStackTrace()
-                            writer.close(); close()
+                            close()
                         }
                     }
                 }
@@ -118,37 +108,15 @@ suspend fun Provider.Node(
 
             joinNodes(id, replicators, nodes)
             electionTimeout()
-
-            replicators.forEach { (nodeId, replicator) ->
-                CoroutineScope(context).launch {
-                    try {
-                        replicator.connection.apply {
-                            while (isActive) {
-                                val op = read.byte()
-                                when (op) {
-                                    OP_VOTE -> voteResponse(leaderId, nodeId, read.int(), read.byte() == 1.toByte())
-                                    OP_APPEND -> {
-                                        ping.set(0L)
-                                        leaderId.set(nodeId)
-                                    }
-                                }
-                            }
-                        }
-                    } catch (exception: Exception) {
-                        replicator.writer.close(); replicator.connection.close()
-                    }
-                }
-            }
-
-            electionTimeout()
+            pings()
+            voteCollector()
 
             return object : Node {
-                override suspend fun append(bytes: ByteArray) {
+                override suspend fun append(message: ByteArray) {
                     while (currentCoroutineContext().isActive) {
-                        val leader = leaderId.get()
                         if (leader == id) {
                             println("We are the leader adding to log: $id")
-                            // append to leader log
+                            log.add(Entry(currentTerm, message))
                             replicators.forEach { (_, replicator) ->
                                 replicator.writer.send {
                                     byte(OP_APPEND)
