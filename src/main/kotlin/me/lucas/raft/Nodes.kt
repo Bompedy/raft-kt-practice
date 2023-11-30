@@ -48,6 +48,7 @@ suspend fun Provider.joinNodes(
     nodes.map { address ->
         CoroutineScope(currentCoroutineContext()).async {
             connect(address).apply {
+                println("Connected to: $address")
                 val nodeId = UUID(read.long(), read.long())
                 write.long(host.mostSignificantBits); write.long(host.leastSignificantBits)
                 val replicator = Replicator(this)
