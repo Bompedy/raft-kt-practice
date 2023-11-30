@@ -52,6 +52,6 @@ fun main(): Unit = runBlocking(executor.asCoroutineDispatcher()) {
 
 //    launch { provider.Node(host = local, b, c) }
 //    launch { provider.Node(host = local, a, c) }
-    provider.Node(host = local, addresses)
+    provider.Node(host = local, addresses).append("testappend".encodeToByteArray())
     delay(Duration.INFINITE)
 }
