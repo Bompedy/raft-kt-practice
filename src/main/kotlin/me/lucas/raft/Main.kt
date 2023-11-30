@@ -28,13 +28,15 @@ fun main(): Unit = runBlocking(executor.asCoroutineDispatcher()) {
 //    "192.168.1.4"
 //    "192.168.1.5"
 
+    val hostname = InetAddress.getLocalHost().hostName.split('.')[0]
+    println("Host name: $hostname")
     val address = NetworkInterface.networkInterfaces().asSequence().flatMap {
         it.inetAddresses.asSequence()
     }.find { "192.168.1" in it.toString() }!!
 
     println("Host address: ${address.hostAddress}")
 
-    val local = Address("localhost", 2000)
+    val local = Address("0.0.0.0", 2000)
     val addresses = arrayOf(
         Address("192.168.1.1", 2000),
         Address("192.168.1.2", 2000),
