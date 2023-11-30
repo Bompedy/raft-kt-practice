@@ -47,6 +47,7 @@ suspend fun Provider.joinNodes(
     val context = currentCoroutineContext()
     nodes.map { address ->
         CoroutineScope(currentCoroutineContext()).async {
+            println("Trying to connect to: $address")
             connect(address).apply {
                 println("Connected to: $address")
                 val nodeId = UUID(read.long(), read.long())
