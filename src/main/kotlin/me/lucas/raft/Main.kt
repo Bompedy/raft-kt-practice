@@ -25,14 +25,15 @@ fun main(): Unit = runBlocking(executor.asCoroutineDispatcher()) {
 //    "192.168.1.4"
 //    "192.168.1.5"
 
+    val local = Address("localhost", 2000)
     val a = Address("192.168.1.1", 2000)
     val b = Address("192.168.1.2", 2000)
     val c = Address("192.168.1.3", 2000)
 //    val d = Address("192.168.1.4", 2000)
 //    val e = Address("192.168.1.5", 2000)
 
-    launch { provider.Node(host = a, b, c) }
-    launch { provider.Node(host = b, a, c) }
-    provider.Node(host = c, b, a).append("testtest".encodeToByteArray())
+    launch { provider.Node(host = local, b, c) }
+    launch { provider.Node(host = local, a, c) }
+    provider.Node(host = local, b, a).append("testtest".encodeToByteArray())
     delay(Duration.INFINITE)
 }
