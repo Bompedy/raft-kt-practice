@@ -19,13 +19,20 @@ fun main(): Unit = runBlocking(executor.asCoroutineDispatcher()) {
         it.setOption(StandardSocketOptions.SO_KEEPALIVE, true)
     }.noTimeout()
 
-    val a = Address("localhost", 8080)
-    val b = Address("localhost", 8081)
-    val c = Address("localhost", 8082)
+//    "192.168.1.1"
+//    "192.168.1.2"
+//    "192.168.1.3"
+//    "192.168.1.4"
+//    "192.168.1.5"
+
+    val a = Address("192.168.1.1", 2000)
+    val b = Address("192.168.1.2", 2000)
+    val c = Address("192.168.1.3", 2000)
+//    val d = Address("192.168.1.4", 2000)
+//    val e = Address("192.168.1.5", 2000)
 
     launch { provider.Node(host = a, b, c) }
     launch { provider.Node(host = b, a, c) }
-    val node = provider.Node(host = c, b, a)
-    node.append("test".encodeToByteArray())
+    provider.Node(host = c, b, a).append("testtest".encodeToByteArray())
     delay(Duration.INFINITE)
 }
