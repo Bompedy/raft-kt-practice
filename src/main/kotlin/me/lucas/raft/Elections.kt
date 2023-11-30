@@ -58,6 +58,7 @@ suspend fun Connection.voteReceived(
         if (cTerm > currentTerm) {
             currentTerm = cTerm
             currentState = FOLLOWER
+            println("Demoted to follower cTerm > currentTerm")
             votedFor = null
         }
         val lastTerm = log.lastOrNull()?.term ?: 0
@@ -91,6 +92,7 @@ suspend fun voteResponse(
         } else if (voterTerm > currentTerm) {
             currentTerm = voterTerm
             currentState = FOLLOWER
+            println("Demoted to follower voterTerm > currentTerm")
             votedFor = null
             ping.set(0L)
         }
