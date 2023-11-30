@@ -16,7 +16,7 @@ suspend fun NodeData.pings() {
             while (isActive) {
                 if (currentState == LEADER) {
                     if (++i % 200 == 0) {
-                        currentState = FOLLOWER
+                        delay(300)
                     } else replicators.forEach { (_, replicator) ->
                         replicator.writer.send { byte(OP_APPEND) }
                     }
