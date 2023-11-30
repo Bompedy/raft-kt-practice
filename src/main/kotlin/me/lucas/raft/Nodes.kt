@@ -42,7 +42,7 @@ data class Replicator(
 suspend fun Provider.joinNodes(
     host: UUID,
     replicators: MutableMap<UUID, Replicator>,
-    nodes: Array<out Address>
+    nodes: List<Address>
 ) {
     val context = currentCoroutineContext()
     nodes.map { address ->
@@ -66,7 +66,7 @@ suspend fun Provider.joinNodes(
 
 suspend fun Provider.Node(
     host: Address,
-    vararg nodes: Address
+    nodes: List<Address>
 ): Node {
     val id = UUID.randomUUID()
     NodeData(id = id, majority = (nodes.size + 1) / 2 + 1).run {
