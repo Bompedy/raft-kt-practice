@@ -13,6 +13,12 @@ import kotlin.time.Duration
 
 private val executor = Executors.newCachedThreadPool()
 
+//    "192.168.1.1"
+//    "192.168.1.2"
+//    "192.168.1.3"
+//    "192.168.1.4"
+//    "192.168.1.5"
+
 fun main(): Unit = runBlocking(executor.asCoroutineDispatcher()) {
     val group = withContext(Dispatchers.IO) {
         AsynchronousChannelGroup.withThreadPool(executor)
@@ -22,36 +28,17 @@ fun main(): Unit = runBlocking(executor.asCoroutineDispatcher()) {
         it.setOption(StandardSocketOptions.SO_KEEPALIVE, true)
     }.noTimeout()
 
-//    "192.168.1.1"
-//    "192.168.1.2"
-//    "192.168.1.3"
-//    "192.168.1.4"
-//    "192.168.1.5"
-
-    val hostname = InetAddress.getLocalHost().hostName.split('.')[0]
-    println("Host name: $hostname")
     val address = NetworkInterface.networkInterfaces().asSequence().flatMap {
         it.inetAddresses.asSequence()
     }.find { "192.168.1" in it.toString() }!!
 
-    println("Host address: ${address.hostAddress}")
-
-    val local = Address("0.0.0.0", 2000)
     val addresses = arrayOf(
         Address("192.168.1.1", 2000),
         Address("192.168.1.2", 2000),
         Address("192.168.1.3", 2000),
-    ).filter {
-        println("Other Address: ${it.address.hostAddress}")
-        !it.address.hostAddress.equals(address.hostAddress)
-    }
+    ).filter { !it.address.hostAddress.equals(address.hostAddress) }
 
-    println("All addresses: $addresses")
-//    val d = Address("192.168.1.4", 2000)
-//    val e = Address("192.168.1.5", 2000)
-
-//    launch { provider.Node(host = local, b, c) }
-//    launch { provider.Node(host = local, a, c) }
-    provider.Node(host = local, addresses).append("testappend".encodeToByteArray())
+    val node = provider.Node(host = Address("0.0.0.0", 2000), addresses)
+//    node.append("testappend".encodeToByteArray())
     delay(Duration.INFINITE)
 }

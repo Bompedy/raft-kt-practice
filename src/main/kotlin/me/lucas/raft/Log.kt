@@ -11,10 +11,13 @@ data class Entry(
 context(NodeData)
 suspend fun NodeData.pings() {
     CoroutineScope(currentCoroutineContext()).launch {
+        var i = 0
         try {
             while (isActive) {
                 if (currentState == LEADER) {
-                    replicators.forEach { (_, replicator) ->
+                    if (++i % 200 == 0) {
+                        currentState = FOLLOWER
+                    } else replicators.forEach { (_, replicator) ->
                         replicator.writer.send { byte(OP_APPEND) }
                     }
                 }
