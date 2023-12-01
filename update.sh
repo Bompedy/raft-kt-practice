@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd ~/raft-kt-practice/
+cd /local/raft/raft-kt-practice
 sudo chmod +x gradlew
 git pull
 ./gradlew build
